@@ -11,7 +11,11 @@ wheels/
 
 # Environment — never commit secrets
 .env
-# .env.example is intentionally NOT listed — it must be committed
+.env.dev
+.env.uat
+.env.prod
+envs/*
+!envs/.env.example
 
 # Test / tool caches
 .pytest_cache/
