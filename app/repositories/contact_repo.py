@@ -46,7 +46,7 @@ class ContactRepository:
             user_agent=user_agent,
         )
         self._session.add(contact)
-        await self._session.flush()   # assigns `id` without committing
+        await self._session.flush()  # assigns `id` without committing
         await self._session.refresh(contact)
 
         logger.debug(

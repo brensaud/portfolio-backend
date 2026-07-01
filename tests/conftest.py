@@ -31,6 +31,7 @@ from app.main import app
 
 # ── Per-test SQLite engine ────────────────────────────────────────────────────
 
+
 @pytest.fixture
 async def test_engine():
     """Create a fresh in-memory SQLite database for each test."""
@@ -51,6 +52,7 @@ async def db_session(test_engine) -> AsyncGenerator[AsyncSession, None]:
 
 # ── HTTP client with dependency overrides ────────────────────────────────────
 
+
 @pytest.fixture
 async def client(db_session: AsyncSession) -> AsyncGenerator[AsyncClient, None]:
     """
@@ -59,6 +61,7 @@ async def client(db_session: AsyncSession) -> AsyncGenerator[AsyncClient, None]:
     The real `get_db` dependency is overridden so all requests use the
     in-memory SQLite database instead of PostgreSQL.
     """
+
     async def _override_get_db() -> AsyncGenerator[AsyncSession, None]:
         yield db_session
 

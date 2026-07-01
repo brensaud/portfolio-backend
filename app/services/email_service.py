@@ -41,8 +41,7 @@ class ConsoleEmailService:
 
     async def send_contact_notification(self, contact: ContactMessage) -> None:
         logger.info(
-            "[EMAIL] New contact submission — "
-            "from=%r subject=%r id=%s",
+            "[EMAIL] New contact submission — from=%r subject=%r id=%s",
             contact.email,
             contact.subject,
             contact.id,

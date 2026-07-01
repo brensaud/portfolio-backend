@@ -28,9 +28,7 @@ from app.services.email_service import AbstractEmailService, get_email_service
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/contact", tags=["contact"])
 
-_SUCCESS_MESSAGE = (
-    "Your message has been received. I'll respond within 48 hours."
-)
+_SUCCESS_MESSAGE = "Your message has been received. I'll respond within 48 hours."
 
 
 @router.post(

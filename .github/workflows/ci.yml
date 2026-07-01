@@ -1,0 +1,141 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ci-backend-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  PYTHON_VERSION: "3.12"
+
+jobs:
+  # ── Lint + format ──────────────────────────────────────────────────────────
+  lint:
+    name: Ruff lint · format
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          version: latest
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install dev dependencies
+        run: uv sync --group dev
+
+      - name: Ruff lint
+        run: uv run ruff check app/ tests/
+
+      - name: Ruff format check
+        run: uv run ruff format --check app/ tests/
+
+  # ── Type check ─────────────────────────────────────────────────────────────
+  typecheck:
+    name: mypy type check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          version: latest
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install dev dependencies
+        run: uv sync --group dev
+
+      - name: mypy
+        run: uv run mypy app/
+
+  # ── Tests ──────────────────────────────────────────────────────────────────
+  test:
+    name: pytest
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          version: latest
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install dev dependencies
+        run: uv sync --group dev
+
+      - name: Run tests with coverage
+        # SQLite in-memory — no PostgreSQL or Redis required in CI
+        run: uv run pytest --cov=app --cov-report=xml --cov-report=term-missing
+
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: coverage-xml
+          path: coverage.xml
+          retention-days: 7
+
+  # ── Docker build ───────────────────────────────────────────────────────────
+  docker:
+    name: Docker build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Docker image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: false        # build only — no registry push in CI
+          tags: portfolio-backend:ci
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  # ── Environment validation ─────────────────────────────────────────────────
+  env-check:
+    name: .env.example validation
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Verify .env.example exists and is not empty
+        run: |
+          test -f .env.example || (echo ".env.example missing" && exit 1)
+          test -s .env.example || (echo ".env.example is empty" && exit 1)
+          echo ".env.example OK"
+
+      - name: Verify .env is not committed
+        run: |
+          if git ls-files --error-unmatch .env 2>/dev/null; then
+            echo "ERROR: .env file is tracked by git — remove it immediately"
+            exit 1
+          fi
+          echo ".env is not tracked — OK"

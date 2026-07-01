@@ -20,9 +20,7 @@ class Settings(BaseSettings):
 
     # ── Database ─────────────────────────────────────────────────────────────
     # asyncpg driver — required for async SQLAlchemy
-    database_url: str = (
-        "postgresql+asyncpg://postgres:postgres@localhost:5432/portfolio"
-    )
+    database_url: str = "postgresql+asyncpg://postgres:postgres@localhost:5432/portfolio"
 
     # ── Redis ────────────────────────────────────────────────────────────────
     redis_url: str = "redis://localhost:6379/0"
@@ -33,7 +31,7 @@ class Settings(BaseSettings):
     allowed_origins: list[str] = ["http://localhost:5173"]
 
     # ── Rate limiting ─────────────────────────────────────────────────────────
-    rate_limit_requests: int = 5        # max submissions per IP per window
+    rate_limit_requests: int = 5  # max submissions per IP per window
     rate_limit_window_seconds: int = 3600  # 1 hour
 
     model_config = SettingsConfigDict(

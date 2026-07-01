@@ -52,8 +52,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
         logger.info("Redis connected at %s", settings.redis_url)
     except Exception:
         logger.warning(
-            "Redis unavailable — rate limiting disabled. "
-            "Start Redis or set REDIS_URL to enable it."
+            "Redis unavailable — rate limiting disabled. Start Redis or set REDIS_URL to enable it."
         )
         app.state.redis = None
 
@@ -86,9 +85,7 @@ def create_app() -> FastAPI:
 
     # ── Global exception handlers ─────────────────────────────────────────────
     @app.exception_handler(Exception)
-    async def unhandled_exception_handler(
-        request: Request, exc: Exception
-    ) -> JSONResponse:
+    async def unhandled_exception_handler(request: Request, exc: Exception) -> JSONResponse:
         logger.exception("Unhandled exception on %s %s", request.method, request.url)
         return JSONResponse(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,

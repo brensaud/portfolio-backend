@@ -63,7 +63,4 @@ class ContactMessage(Base):
     )
 
     def __repr__(self) -> str:
-        return (
-            f"<ContactMessage id={self.id} "
-            f"from={self.email!r} subject={self.subject!r}>"
-        )
+        return f"<ContactMessage id={self.id} from={self.email!r} subject={self.subject!r}>"

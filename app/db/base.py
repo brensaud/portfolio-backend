@@ -21,7 +21,7 @@ def create_engine() -> AsyncEngine:
     return create_async_engine(
         settings.database_url,
         echo=settings.debug,
-        pool_pre_ping=True,   # validates connections before use
+        pool_pre_ping=True,  # validates connections before use
         pool_size=5,
         max_overflow=10,
     )
