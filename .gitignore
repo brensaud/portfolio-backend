@@ -11,6 +11,9 @@ wheels/
 
 # Environment — never commit secrets
 .env
+.env.dev
+.env.uat
+.env.prod
 # .env.example is intentionally NOT listed — it must be committed
 
 # Test / tool caches
