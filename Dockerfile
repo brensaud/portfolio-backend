@@ -5,8 +5,10 @@ COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /usr/local/bin/
 
 WORKDIR /app
 
-# Set a writable UV cache directory inside the image
-ENV UV_CACHE_DIR=/tmp/uv-cache
+# Disable uv cache at runtime — appuser has no home dir, so the default
+# ~/.cache/uv path is not writable. All packages are already installed via
+# uv sync during the build step, so a runtime cache is not needed.
+ENV UV_NO_CACHE=1
 
 # Copy dependency manifests first (layer caching)
 COPY pyproject.toml uv.lock ./
