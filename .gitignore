@@ -14,7 +14,8 @@ wheels/
 .env.dev
 .env.uat
 .env.prod
-# .env.example is intentionally NOT listed — it must be committed
+envs/*
+!envs/.env.example
 
 # Test / tool caches
 .pytest_cache/
