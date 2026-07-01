@@ -1,0 +1,24 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# Virtual environments
+.venv
+
+# Environment — never commit secrets
+.env
+# .env.example is intentionally NOT listed — it must be committed
+
+# Test / tool caches
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+
+# Coverage
+htmlcov/
+.coverage
+coverage.xml
