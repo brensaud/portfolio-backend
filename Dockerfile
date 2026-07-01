@@ -5,6 +5,9 @@ COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /usr/local/bin/
 
 WORKDIR /app
 
+# Set a writable UV cache directory inside the image
+ENV UV_CACHE_DIR=/tmp/uv-cache
+
 # Copy dependency manifests first (layer caching)
 COPY pyproject.toml uv.lock ./
 
