@@ -29,5 +29,6 @@ USER appuser
 
 EXPOSE 8000
 
-# Run migrations then start the server
-CMD ["sh", "-c", "uv run alembic upgrade head && uv run uvicorn app.main:app --host 0.0.0.0 --port 8000"]
+# Run migrations then start the server.
+# Use the venv directly — avoids uv re-syncing dev dependencies at runtime.
+CMD ["sh", "-c", "/app/.venv/bin/alembic upgrade head && /app/.venv/bin/uvicorn app.main:app --host 0.0.0.0 --port 8000"]
