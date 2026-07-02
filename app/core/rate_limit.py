@@ -77,13 +77,18 @@ def _get_client_ip(request: Request) -> str:
     """
     Extract the real client IP from the request.
 
-    Checks the X-Forwarded-For header first (set by reverse proxies like
-    Nginx or cloud load balancers).  Falls back to the direct connection IP.
+    Security note: reads the RIGHTMOST entry from X-Forwarded-For, not the
+    leftmost.  The leftmost entry is user-supplied and trivially spoofable.
+    The rightmost entry is appended by the last trusted proxy (e.g. Render's
+    load balancer) and cannot be forged by the client.
+
+    Falls back to the direct TCP connection IP when the header is absent.
     """
     forwarded_for = request.headers.get("X-Forwarded-For")
     if forwarded_for:
-        # Header may contain a comma-separated list; first entry is the client
-        return forwarded_for.split(",")[0].strip()
+        # Header may contain a comma-separated list; last entry is added by
+        # the trusted proxy and is the real client IP.
+        return forwarded_for.split(",")[-1].strip()
     if request.client:
         return request.client.host
     return "unknown"
