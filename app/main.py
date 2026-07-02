@@ -21,6 +21,7 @@ from fastapi import FastAPI, Request, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
+from app.api.admin.router import admin_router
 from app.api.v1.router import router as api_v1_router
 from app.core.config import settings
 from app.core.logging import setup_logging
@@ -38,6 +39,10 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
         settings.app_version,
         settings.environment,
     )
+
+    # Record startup time for the /health endpoint
+    from datetime import UTC, datetime
+    app.state.startup_time = datetime.now(UTC)
 
     # Redis — graceful degradation if unavailable
     try:
@@ -78,8 +83,11 @@ def create_app() -> FastAPI:
     app.add_middleware(
         CORSMiddleware,
         allow_origins=settings.allowed_origins,
-        allow_credentials=False,
-        allow_methods=["GET", "POST", "OPTIONS"],
+        # allow_credentials=True is required for HTTPOnly cookie auth on the
+        # admin API.  Only works when allow_origins lists explicit origins
+        # (not "*") — which is already enforced by the production validator.
+        allow_credentials=True,
+        allow_methods=["GET", "POST", "PATCH", "PUT", "DELETE", "OPTIONS"],
         allow_headers=["Content-Type", "Accept"],
     )
 
@@ -94,6 +102,7 @@ def create_app() -> FastAPI:
 
     # ── Routes ────────────────────────────────────────────────────────────────
     app.include_router(api_v1_router, prefix="/api/v1")
+    app.include_router(admin_router, prefix="/admin/api")
 
     return app
 
