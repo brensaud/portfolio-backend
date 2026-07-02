@@ -79,6 +79,22 @@ def _redis(request: Request):  # type: ignore[return]
     return getattr(request.app.state, "redis", None)
 
 
+def _client_ip(request: Request) -> str:
+    """
+    Extract the real client IP (rightmost X-Forwarded-For entry).
+
+    The rightmost entry is appended by the trusted reverse proxy (Render)
+    and cannot be forged by the client.  Falls back to the direct TCP
+    connection host when the header is absent.
+    """
+    forwarded = request.headers.get("X-Forwarded-For")
+    if forwarded:
+        return forwarded.split(",")[-1].strip()
+    if request.client:
+        return request.client.host
+    return "unknown"
+
+
 async def _check_login_rate_limit(request: Request) -> None:
     """
     Enforce admin login rate limits using Redis sliding counters.
@@ -92,15 +108,7 @@ async def _check_login_rate_limit(request: Request) -> None:
     if redis is None:
         return
 
-    # Determine real client IP (rightmost X-Forwarded-For entry)
-    forwarded = request.headers.get("X-Forwarded-For")
-    if forwarded:
-        ip = forwarded.split(",")[-1].strip()
-    elif request.client:
-        ip = request.client.host
-    else:
-        ip = "unknown"
-
+    ip = _client_ip(request)
     lock_key = _LOCK_KEY.format(ip=ip)
     rl_key = _RL_KEY.format(ip=ip)
 
@@ -143,14 +151,7 @@ async def _record_login_failure(request: Request) -> None:
     if redis is None:
         return
 
-    forwarded = request.headers.get("X-Forwarded-For")
-    if forwarded:
-        ip = forwarded.split(",")[-1].strip()
-    elif request.client:
-        ip = request.client.host
-    else:
-        ip = "unknown"
-
+    ip = _client_ip(request)
     rl_key = _RL_KEY.format(ip=ip)
     lock_key = _LOCK_KEY.format(ip=ip)
 
@@ -214,61 +215,49 @@ async def login(
     """
     await _check_login_rate_limit(request)
 
-    # Determine which hash to compare against.
-    # If the email does not match, we still run bcrypt against a dummy hash
-    # so that response timing is indistinguishable for "wrong email" vs
-    # "wrong password".
-    email_matches = body.email.lower() == settings.admin_email.lower()
-    candidate_hash = settings.admin_password_hash if email_matches else get_dummy_hash()
+    # Compute once — used for rate limiting, audit log, and request logging.
+    client_ip = _client_ip(request)
 
-    # Verify password — this always runs bcrypt (constant time)
-    if not candidate_hash or not verify_password(body.password, candidate_hash):
+    email_matches = body.email.lower() == settings.admin_email.lower()
+
+    # Always run bcrypt — timing must be identical for wrong-email and
+    # wrong-password paths.
+    # If admin_password_hash is empty (unconfigured admin), compare against
+    # the dummy hash so bcrypt still runs instead of short-circuiting.
+    stored_hash = settings.admin_password_hash or get_dummy_hash()
+    candidate_hash = stored_hash if email_matches else get_dummy_hash()
+    password_ok = verify_password(body.password, candidate_hash)
+
+    if not password_ok or not email_matches:
         await _record_login_failure(request)
         async with db as session:
-            audit = AuditRepository(session)
-            await audit.write(
+            await AuditRepository(session).write(
                 action="admin.login_failure",
                 actor=body.email,
-                ip_address=request.headers.get("X-Forwarded-For", "").split(",")[-1].strip()
-                or (request.client.host if request.client else None),
+                ip_address=client_ip,
             )
             await session.commit()
         raise _INVALID_CREDS
 
-    if not email_matches:
-        # bcrypt passed on dummy hash (extremely unlikely) — still reject
-        await _record_login_failure(request)
-        raise _INVALID_CREDS
-
-    # Clear any previous rate-limit counters on successful login
+    # Successful authentication — clear rate-limit counter for this IP.
     redis = _redis(request)
     if redis is not None:
         try:
-            forwarded = request.headers.get("X-Forwarded-For")
-            ip = (
-                forwarded.split(",")[-1].strip()
-                if forwarded
-                else (request.client.host if request.client else "unknown")
-            )
-            await redis.delete(_RL_KEY.format(ip=ip))
+            await redis.delete(_RL_KEY.format(ip=client_ip))
         except Exception:
             pass
 
     expires_at = await _issue_token_pair(response, body.email, redis)
 
     async with db as session:
-        audit = AuditRepository(session)
-        ip = request.headers.get("X-Forwarded-For", "").split(",")[-1].strip() or (
-            request.client.host if request.client else None
-        )
-        await audit.write(
+        await AuditRepository(session).write(
             action="admin.login_success",
             actor=body.email,
-            ip_address=ip,
+            ip_address=client_ip,
         )
         await session.commit()
 
-    logger.info("Admin login: %s from %s", body.email, ip if "ip" in dir() else "unknown")
+    logger.info("Admin login: %s from %s", body.email, client_ip)
     return LoginResponse(email=body.email, expires_at=expires_at)
 
 
@@ -384,10 +373,10 @@ async def me(
 ) -> MeResponse:
     """Return identity and token expiry for the currently authenticated admin."""
     token = request.cookies.get("access_token")
-    # Decode again to read the exp claim — already validated by the dependency
+    # Re-decode to extract the exp claim.  The token is already validated by
+    # get_current_admin, so this decode will not fail under normal conditions.
     try:
-        import jwt as _jwt
-        payload = _jwt.decode(
+        payload = jwt.decode(
             token,
             settings.admin_jwt_secret,
             algorithms=["HS256"],
@@ -396,7 +385,8 @@ async def me(
         )
         expires_at = datetime.fromtimestamp(payload["exp"], tz=UTC)
     except Exception:
-        # Fallback: estimate from current time
+        # Fallback: estimate from current time (token is still valid or we
+        # wouldn't have reached this point).
         expires_at = token_expires_at()
 
     return MeResponse(email=admin, expires_at=expires_at)
