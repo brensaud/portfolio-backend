@@ -49,7 +49,7 @@ def main() -> None:
     try:
         from app.core.admin_auth import hash_password
     except ImportError as exc:
-        print(f"Error: could not import hash_password — is passlib installed?\n{exc}", file=sys.stderr)
+        print(f"Error: could not import hash_password — is bcrypt installed?\n{exc}", file=sys.stderr)
         sys.exit(1)
 
     print("\nGenerating bcrypt hash (this may take a moment)...")

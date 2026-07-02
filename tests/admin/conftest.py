@@ -64,7 +64,6 @@ def admin_settings(monkeypatch, test_admin_hash: str) -> None:
     patched values without module reloading.
     """
     import app.core.config as _cfg_module
-    import app.core.admin_auth as _auth_module
 
     monkeypatch.setattr(_cfg_module.settings, "admin_email", TEST_ADMIN_EMAIL)
     monkeypatch.setattr(_cfg_module.settings, "admin_password_hash", test_admin_hash)
