@@ -17,6 +17,9 @@ wheels/
 envs/*
 !envs/.env.example
 
+# Local dev notes / runbooks (not for version control)
+local_dev/
+
 # Test / tool caches
 .pytest_cache/
 .ruff_cache/
