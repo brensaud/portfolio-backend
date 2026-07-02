@@ -2,7 +2,7 @@
 ContactMessage ORM model.
 
 Stores every inbound contact form submission.
-`status` tracks the lifecycle: new → read → replied.
+`status` tracks the admin lifecycle: unread → read → archived.
 
 Column notes:
   • id          — UUID primary key (CHAR(32) on SQLite in tests, UUID on PG)
@@ -10,6 +10,11 @@ Column notes:
   • user_agent  — optional; first 500 chars of the raw UA string
   • created_at  — set by the DB on INSERT (server_default)
   • updated_at  — set by the DB on INSERT and updated on UPDATE
+
+Status lifecycle (migration 0003 renamed the original values):
+  unread   — newly received, not yet viewed by admin (was: "new")
+  read     — admin has opened the message
+  archived — admin has archived the message (soft-equivalent of dismissed)
 """
 
 from __future__ import annotations
@@ -25,9 +30,9 @@ from app.db.base import Base
 
 
 class ContactStatus(StrEnum):
-    NEW = "new"
+    UNREAD = "unread"
     READ = "read"
-    REPLIED = "replied"
+    ARCHIVED = "archived"
 
 
 class ContactMessage(Base):
@@ -45,8 +50,8 @@ class ContactMessage(Base):
     status: Mapped[str] = mapped_column(
         String(20),
         nullable=False,
-        default=ContactStatus.NEW,
-        server_default=ContactStatus.NEW,
+        default=ContactStatus.UNREAD,
+        server_default=ContactStatus.UNREAD,
     )
     ip_address: Mapped[str | None] = mapped_column(String(45), nullable=True)
     user_agent: Mapped[str | None] = mapped_column(String(500), nullable=True)
