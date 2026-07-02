@@ -101,6 +101,25 @@ async def test_login_empty_password_rejected(admin_client: AsyncClient) -> None:
     assert resp.status_code == 422
 
 
+@pytest.mark.asyncio
+async def test_login_unconfigured_admin_returns_401(
+    admin_client: AsyncClient, monkeypatch
+) -> None:
+    """
+    When admin_password_hash is empty (admin not yet configured), login must
+    still return 401 — and bcrypt must still run (constant-time guarantee).
+
+    This covers the H2 fix: the old code short-circuited on `not candidate_hash`
+    before running bcrypt, creating a timing difference that revealed valid emails.
+    After the fix, the dummy hash is used instead.
+    """
+    import app.core.config as _cfg
+    monkeypatch.setattr(_cfg.settings, "admin_password_hash", "")
+    status, body = await _login(admin_client, email=TEST_ADMIN_EMAIL)
+    assert status == 401
+    assert body["detail"] == "Invalid credentials."
+
+
 # ── /me ────────────────────────────────────────────────────────────────────────
 
 
