@@ -5,8 +5,10 @@ COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /usr/local/bin/
 
 WORKDIR /app
 
-# Use copy link mode (container filesystems don't support hardlinks)
-ENV UV_LINK_MODE=copy
+# Disable uv cache at runtime — appuser has no home dir, so the default
+# ~/.cache/uv path is not writable. All packages are already installed via
+# uv sync during the build step, so a runtime cache is not needed.
+ENV UV_NO_CACHE=1
 
 # Copy dependency manifests first (layer caching)
 COPY pyproject.toml uv.lock ./
