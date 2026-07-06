@@ -17,8 +17,8 @@ wheels/
 envs/*
 !envs/.env.example
 
-# Local dev notes / runbooks (not for version control)
-local_dev/
+# Local dev notes / runbooks — tracked for reference
+# local_dev/ ← previously ignored; now committed as project documentation
 
 # Test / tool caches
 .pytest_cache/
