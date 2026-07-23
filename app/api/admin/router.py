@@ -15,6 +15,7 @@ from __future__ import annotations
 
 from fastapi import APIRouter, Depends
 
+from app.api.admin.articles import router as articles_router
 from app.api.admin.auth import router as auth_router
 from app.api.admin.contact_messages import router as contact_messages_router
 from app.core.admin_deps import get_current_admin
@@ -34,5 +35,10 @@ _protected.include_router(
     contact_messages_router,
     prefix="/contact-messages",
     tags=["admin-contact-messages"],
+)
+_protected.include_router(
+    articles_router,
+    prefix="/articles",
+    tags=["admin-articles"],
 )
 admin_router.include_router(_protected)
