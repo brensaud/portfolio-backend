@@ -19,6 +19,7 @@ from app.core.config import settings
 # Import all models so Alembic can detect table changes
 from app.models import contact as _contact_models  # noqa: F401
 from app.models import audit_log as _audit_log_models  # noqa: F401
+from app.models import case_study as _case_study_models  # noqa: F401
 from app.db.base import Base
 
 # Alembic Config object (provides access to .ini values)

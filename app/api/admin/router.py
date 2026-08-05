@@ -18,6 +18,7 @@ from fastapi import APIRouter, Depends
 from app.api.admin.articles import router as articles_router
 from app.api.admin.auth import router as auth_router
 from app.api.admin.availability import router as availability_router
+from app.api.admin.case_studies import router as case_studies_router
 from app.api.admin.contact_messages import router as contact_messages_router
 from app.api.admin.projects import router as projects_router
 from app.api.admin.resume import router as resume_router
@@ -64,5 +65,10 @@ _protected.include_router(
     resume_router,
     prefix="/resume",
     tags=["admin-resume"],
+)
+_protected.include_router(
+    case_studies_router,
+    prefix="/case-studies",
+    tags=["admin-case-studies"],
 )
 admin_router.include_router(_protected)

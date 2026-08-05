@@ -228,9 +228,51 @@
 
 ---
 
-## Next Sprint to Implement — Sprint 7: Case Studies CMS
+## Next Sprint to Implement — Sprint 8: Privacy-First Analytics
+
+**Goal:** Capture basic page view + event analytics without third-party scripts; admin dashboard shows visit trends.
+
+---
+
+## Sprint 7 — Case Studies CMS ✅ Complete
 
 **Goal:** Move `src/data/case-studies.ts` to the database; full case study CRUD in admin.
+
+### Backend — ✅ Fully complete
+- [x] `app/models/case_study.py` — `CaseStudy` ORM model (`status`: draft/published, `content`: JSON column)
+- [x] `alembic/versions/0008_create_case_studies.py` — `case_studies` table + seed interviewpilot-ai data
+- [x] `app/repositories/case_study_repo.py` — list_all, get_by_slug, get_published_by_slug, get_by_id, create, update, publish, unpublish, delete
+- [x] `app/schemas/case_study.py` — `CaseStudyPublic` (public response)
+- [x] `app/schemas/admin/case_study.py` — `AdminCaseStudyOut`, `AdminCaseStudyCreate`, `AdminCaseStudyUpdate`
+- [x] `app/services/case_study_service.py` — public read + admin CRUD with audit logging
+- [x] `app/api/v1/endpoints/case_studies.py` — `GET /api/v1/projects/{slug}/case-study` (published only)
+- [x] `app/api/admin/case_studies.py` — full admin CRUD (7 endpoints: list, create, get, update, publish, unpublish, delete)
+- [x] `app/api/v1/router.py` + `app/api/admin/router.py` — case study routers wired
+- [x] `alembic/env.py` — `case_study` model registered for autogenerate
+- [x] `tests/admin/test_admin_case_studies.py` — 26 tests covering auth guards, list, create, get, update, publish/unpublish, delete, public endpoint (published/draft/404/no-auth)
+
+### Frontend — ✅ Fully complete
+- [x] `src/lib/case-study-api.ts` — `CaseStudyPublicResponse` type, `getCaseStudy(slug)`, `toCaseStudy()` transformer
+- [x] `src/hooks/use-case-study.ts` — `useCaseStudy(slug)` React Query hook (10 min stale; returns null on 404)
+- [x] `src/lib/admin-api.ts` — `AdminCaseStudyOut`, `CaseStudyCreatePayload`, `CaseStudyUpdatePayload` + 7 API functions appended
+- [x] `src/features/admin/case-studies/use-admin-case-studies.ts` — `useAdminCaseStudies`, `useAdminCaseStudy`, `useCreateCaseStudy`, `useUpdateCaseStudy`, `usePublishCaseStudy`, `useUnpublishCaseStudy`, `useDeleteCaseStudy`
+- [x] `src/pages/admin/admin-case-studies-page.tsx` — list view (status badge, publish toggle, edit, delete) + create form + edit form (metadata + full JSON content editor)
+- [x] `src/constants/routes.ts` — `ADMIN_ROUTES.CASE_STUDIES` added
+- [x] `src/routes/index.tsx` — `{ path: 'case-studies', element: <AdminCaseStudiesPage /> }` added
+- [x] `src/features/admin/layout/admin-nav.tsx` — Case Studies nav link (BookOpen icon) added
+- [x] `src/pages/project-detail-page.tsx` — replaced static `CASE_STUDIES.find()` with `useCaseStudy()` API hook; `toCaseStudy()` flattens response into `CaseStudy` shape for existing components
+
+### Design decisions recorded
+- Single JSON `content` column for full nested case study body — avoids ~20 join tables for a portfolio CMS
+- `content` shape matches the existing `CaseStudy` TS interface — existing `CaseStudyOverview`, `CaseStudyArchitecture`, `CaseStudyQuality` components work unchanged
+- `status: draft | published` — draft is hidden from public endpoint
+- `published_at` set on first publish; not reset on re-publish
+- Admin content editor uses raw JSON textarea — sufficient for a developer portfolio CMS
+- Static `PROJECTS` bridge in `project-detail-page.tsx` kept for `CaseStudyHero` (needs `categories[]`, `techStack[]` from static shape — API `ProjectDetail` has `category` string)
+
+---
+
+## Next Sprint to Implement — Sprint 8: Privacy-First Analytics
 
 ---
 
