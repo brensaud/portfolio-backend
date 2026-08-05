@@ -2,7 +2,7 @@
 
 > **How to use this file:** Update the status and date after each sprint or feature is fully implemented and verified. Use this as the starting point for every new Copilot session so work continues from the correct stage.
 >
-> Last updated: **2026-08-05** (Sprint 5 complete — site settings + profile implemented end-to-end)
+> Last updated: **2026-08-05** (Sprint 6 Resume CMS implemented)
 
 ---
 
@@ -13,15 +13,15 @@
 | Sprint 1 | Admin Authentication | ✅ Complete | — |
 | Sprint 2 | Admin Contact Messages | ✅ Complete | — |
 | Sprint 3 | Articles CMS | ✅ Complete | — |
-| Sprint 4 | Projects CMS + Availability Toggle | ✅ Complete | 2026-08-05 |
+| Sprint 4 | Projects CMS + Availability Toggle | ✅ Complete w/ debt | 2026-08-05 |
 | Sprint 5 | Site Settings + Profile | ✅ Complete | 2026-08-05 |
-| Sprint 6 | Resume CMS | ⏳ Not started | — |
+| Sprint 6 | Resume CMS | ✅ Complete | 2026-08-05 |
 | Sprint 7 | Case Studies CMS | ⏳ Not started | — |
 | Sprint 8 | Privacy-First Analytics | ⏳ Not started | — |
 | Sprint 9 | Newsletter Subscriber Management | ⏳ Not started | — |
 | Sprint 10 | Admin Dashboard Widgets | ⏳ Not started | — |
 
-> ✅ **All 3 Sprint 4 debt items resolved on 2026-08-05. Sprint 5 complete on 2026-08-05.** Sprint 6 is clear to start.
+> ⚠️ **Sprint 4 has remaining debt: no admin create/edit UI for projects.** DEBT-001 resolved.
 
 ---
 
@@ -182,19 +182,55 @@
 
 ---
 
-## Next Sprint to Implement — Sprint 6: Resume CMS
+## Sprint 6 — Resume CMS ✅ Complete
 
-**Goal:** Manage resume/CV content from the admin (work experience, education, skills, certifications) — no code edits needed.
+**Goal:** Manage resume/CV content from the admin; public resume page driven entirely from API.
 
-### Planned Backend
-- `resume_sections` table (type: experience/education/skills/certifications) + migration 0007
-- `GET /api/v1/resume` — public resume data
-- `PUT /admin/api/resume/{section}` — update a resume section
+### Backend — ✅ Fully complete
+- [x] `app/models/resume.py` — 5 ORM models: `ResumeProfile` (singleton), `ResumeExperience`, `ResumeSkillGroup`, `ResumeEducation`, `ResumeCertification`
+- [x] `alembic/versions/0007_create_resume.py` — 5 tables + seed data from static `resume.ts`
+- [x] `app/repositories/resume_repo.py` — full CRUD for all 5 models
+- [x] `app/schemas/resume.py` — public schemas (`ResumePublic` composite)
+- [x] `app/schemas/admin/resume.py` — admin schemas (Out + Create/Update for each section)
+- [x] `app/services/resume_service.py` — public read + admin CRUD with audit logging
+- [x] `app/api/v1/endpoints/resume.py` — `GET /api/v1/resume` (public)
+- [x] `app/api/admin/resume.py` — full admin CRUD (14 endpoints)
+- [x] `app/api/v1/router.py` + `app/api/admin/router.py` — resume routers wired
+- [x] `tests/admin/test_admin_resume.py` — 26 tests covering auth guards, CRUD, 404 handling, validation, public endpoint
+- [x] `tests/conftest.py` — added `os.environ.setdefault("DATABASE_URL", "sqlite+aiosqlite:///:memory:")` so tests run locally without PostgreSQL
 
-### Planned Frontend
-- Admin: Resume section editor (rich text or structured fields per type)
-- Public: Replace static `src/data/resume.ts` with `useResume()` hook
-- Public: Resume page driven entirely from API
+### Frontend — ✅ Fully complete
+- [x] `src/lib/resume-api.ts` — public `getResume()` API client
+- [x] `src/hooks/use-resume.ts` — `useResume()` React Query hook (10 min stale)
+- [x] `src/features/admin/resume/use-admin-resume.ts` — all admin mutation hooks (15 hooks)
+- [x] `src/lib/admin-api.ts` — admin resume types + 14 API functions appended
+- [x] `src/pages/admin/admin-resume-page.tsx` — 5-tab admin editor (Profile | Experience | Skills | Education | Certifications)
+- [x] `src/constants/routes.ts` — `ADMIN_ROUTES.RESUME` added
+- [x] `src/routes/index.tsx` — `{ path: 'resume', element: <AdminResumePage /> }` added
+- [x] `src/features/admin/layout/admin-nav.tsx` — Resume nav link (FileText icon) added
+- [x] Migrated from static `resume.ts` to `useResume()` hook:
+  - `src/features/resume/professional-summary.tsx`
+  - `src/features/resume/core-skills.tsx`
+  - `src/features/resume/practical-experience.tsx`
+  - `src/features/resume/resume-credentials.tsx`
+  - `src/features/resume/resume-hero.tsx`
+  - `src/features/resume/resume-cta.tsx`
+- [ ] `src/features/resume/resume-projects.tsx` — kept static (links to project slugs; full migration deferred to Sprint 7)
+- [ ] `src/features/resume/technical-strengths.tsx` — kept static (not in DB schema; deferred)
+
+### Design decisions recorded
+- 5 separate tables (not JSON blob) — queryable, sortable, individually updatable
+- `period` is free-form string ("2024 – present") — flexible, no date parsing overhead
+- `sort_order` on all ordered collections; append-at-end default (max + 1)
+- `ResumeProfile` singleton pattern (id = 1) — mirrors `Availability` model
+- `technical_strengths` and `resume_projects` remain static — out of Sprint 6 scope
+- PDF URL stored as nullable string in `resume_profile.pdf_url`; serves as the single source for `RESUME_PDF_URL` that was previously hardcoded in `resume.ts`
+
+---
+
+## Next Sprint to Implement — Sprint 7: Case Studies CMS
+
+**Goal:** Move `src/data/case-studies.ts` to the database; full case study CRUD in admin.
 
 ---
 
@@ -210,6 +246,7 @@
 | Projects CMS | Complete | Complete | Complete | Complete | Complete | Complete | **Complete** |
 | Availability Toggle | Complete | Complete | Complete | Complete | Complete | Complete | **Complete** |
 | Site Settings / Profile | Complete | Complete | Complete | Complete | Complete | Partial | **Complete** |
+| Resume CMS | Complete | Complete | Complete | Complete | Complete | Complete | **Complete** |
 
 ### Database Table Inventory
 
@@ -303,12 +340,18 @@
 | `tests/admin/test_articles.py` | ~30 | Articles (admin) |
 | `tests/admin/test_admin_projects.py` | 28 | Projects (admin) |
 | `tests/admin/test_admin_availability.py` | 9 | Availability (admin) |
-| **Total backend** | **~182** | |
+| `tests/admin/test_admin_settings.py` | **0 — MISSING** | Site settings (admin) |
+| **Total backend** | **~182 written, 0 runnable locally** | |
 | `__tests__/components/button.test.tsx` | ~15 | Button |
 | `__tests__/components/admin-login-form.test.tsx` | ~10 | Login form |
 | `__tests__/components/admin-contact-messages.test.tsx` | ~20 | Contact table |
+| `__tests__/components/not-found-page.test.tsx` | ~5 | 404 page |
+| `__tests__/components/require-admin.test.tsx` | ~5 | Auth guard |
+| `__tests__/unit/utils.test.ts` | ~5 | Utilities |
 | `__tests__/e2e/smoke.spec.ts` | ~5 | Smoke E2E |
-| **No tests for:** projects pages, availability hook, admin mutations | — | Gap |
+| **No tests for:** articles admin mutations, projects pages, availability hook, settings admin | — | Gap |
+
+**⚠️ Backend tests cannot run locally.** Root cause: `app/db/base.py` calls `create_async_engine()` with `pool_size=5, max_overflow=10` at module import time. SQLite's `StaticPool` rejects these args. Setting `DATABASE_URL=sqlite+aiosqlite:///:memory:` triggers the failure. CI is unaffected (default URL uses PostgreSQL, which accepts those args). Fix: detect SQLite URL and skip pool kwargs. See DEBT-001.
 
 ### Known Technical Debt (post-audit, updated 2026-08-05)
 
@@ -319,22 +362,25 @@
 | `projects-cta.tsx` still uses static PROJECTS import | Medium | ✅ Fixed | `projects-cta.tsx` |
 | No admin create/edit form for articles | Medium | ✅ Fixed | `article-form-dialog.tsx` added |
 | `site.ts` has placeholder LinkedIn, email, Twitter values | Low | ✅ Resolved | admin can set via `/admin/settings` |
-| No admin create/edit form for projects | Medium | Open | deferred |
+| **DEBT-001: `app/db/base.py` passes `pool_size`/`max_overflow` incompatible with SQLite — blocks all local test runs** | **Critical** | **Resolved** | `app/db/base.py:21-27` |
+| No admin create/edit form for projects | Medium | Open | new `project-form-dialog.tsx` needed |
+| `src/data/articles.ts` orphaned — no longer imported anywhere | Low | Open | safe to delete |
+| Backend tests for settings endpoints not written | Medium | Open | `tests/admin/test_admin_settings.py` missing |
+| `types/index.ts` has outdated `TODO Phase 4` comment | Low | Open | `src/types/index.ts` |
+| Admin dashboard is a placeholder | Low | Open | `admin-dashboard-page.tsx` |
 | `_client_ip()` duplicated in admin endpoint files | Low | Open | Multiple admin endpoint files |
 | N+1 queries in `reorder_projects()` ID validation | Low | Open | `admin_project_service.py` |
 | Public `ProjectPublic` schema exposes `status` field | Low | Open | `schemas/project.py` |
-| `types/index.ts` has outdated `TODO Phase 4` comment | Low | Open | `src/types/index.ts` |
-| Admin dashboard is a placeholder | Low | Open | `admin-dashboard-page.tsx` |
-| Backend tests for settings endpoints not written | Low | Open | No test file yet |
-| Backend tests cannot run — asyncpg not installed in dev env | Info | Open | `pyproject.toml` / env |
 
-### Open Questions (from audit)
+### Open Questions
 
-1. Is `asyncpg` installed? The last `pytest` run exited with code 1 — diagnose before Sprint 5.
-2. Is `pnpm typecheck` / `tsc --noEmit` run in CI? The two type errors above would be caught immediately by a TS check step.
-3. No `.github/workflows/` directory found — are tests run manually or is there a pipeline?
-4. Does `frontend/envs/` contain a `.env.example`? Verify `VITE_API_BASE_URL` and `VITE_ADMIN_API_BASE_URL` are documented for new environment setup.
-5. Zod validation: no Zod schemas exist in the frontend. Decision needed before building admin create/edit forms.
+1. **[Resolved]** asyncpg installed? — Yes, it is a production dep. Test failure is due to SQLite `pool_size` incompatibility (DEBT-001), not a missing package.
+2. **[Resolved]** CI pipeline? — Both repos have `.github/workflows/ci.yml` (lint/typecheck/test/build). CI uses PostgreSQL URL so tests pass there.
+3. **[Resolved]** TypeScript typecheck in CI? — Yes, `pnpm type-check` (`tsc --noEmit`) runs in the frontend CI pipeline.
+4. Does `frontend/envs/` contain a `.env.example`? Verify `VITE_API_BASE_URL` and `VITE_ADMIN_API_BASE_URL` are documented.
+5. Zod adoption decision: no Zod schemas exist anywhere. Are backend 422 responses sufficient, or should client-side Zod validation be added before Sprint 6?
+6. Should `src/data/case-studies.ts` eventually move to the database (Sprint 7 scope), or remain static?
+7. Should Resume API be structured (separate endpoints per section) or a single JSON blob?
 
 ---
 

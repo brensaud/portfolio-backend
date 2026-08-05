@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from fastapi import APIRouter
 
-from app.api.v1.endpoints import articles, availability, contact, health, projects, settings
+from app.api.v1.endpoints import articles, availability, contact, health, projects, resume, settings
 
 router = APIRouter()
 
@@ -14,3 +14,4 @@ router.include_router(articles.router)
 router.include_router(projects.router)
 router.include_router(availability.router)
 router.include_router(settings.router)
+router.include_router(resume.router)

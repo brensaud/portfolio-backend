@@ -18,12 +18,14 @@ class Base(AsyncAttrs, DeclarativeBase):
 
 
 def create_engine() -> AsyncEngine:
+    url_str = str(settings.database_url)
+    # SQLite's StaticPool rejects pool_size/max_overflow; omit them for sqlite URLs
+    pool_kwargs = {} if "sqlite" in url_str else {"pool_size": 5, "max_overflow": 10}
     return create_async_engine(
-        settings.database_url,
+        url_str,
         echo=settings.debug,
-        pool_pre_ping=True,  # validates connections before use
-        pool_size=5,
-        max_overflow=10,
+        pool_pre_ping=True,
+        **pool_kwargs,
     )
 
 

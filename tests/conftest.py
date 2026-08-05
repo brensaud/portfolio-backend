@@ -19,6 +19,12 @@ HTTP client:
 
 from __future__ import annotations
 
+import os
+
+# Set DATABASE_URL before any app module is imported so the module-level
+# create_async_engine() in app.db.base uses SQLite instead of PostgreSQL.
+os.environ.setdefault("DATABASE_URL", "sqlite+aiosqlite:///:memory:")
+
 from collections.abc import AsyncGenerator
 
 import pytest

@@ -20,6 +20,7 @@ from app.api.admin.auth import router as auth_router
 from app.api.admin.availability import router as availability_router
 from app.api.admin.contact_messages import router as contact_messages_router
 from app.api.admin.projects import router as projects_router
+from app.api.admin.resume import router as resume_router
 from app.api.admin.settings import router as settings_router
 from app.core.admin_deps import get_current_admin
 
@@ -58,5 +59,10 @@ _protected.include_router(
     settings_router,
     prefix="/settings",
     tags=["admin-settings"],
+)
+_protected.include_router(
+    resume_router,
+    prefix="/resume",
+    tags=["admin-resume"],
 )
 admin_router.include_router(_protected)
