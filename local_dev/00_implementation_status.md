@@ -228,9 +228,50 @@
 
 ---
 
-## Next Sprint to Implement — Sprint 8: Privacy-First Analytics
+## Next Sprint to Implement — Sprint 9: Newsletter Subscriber Management
 
-**Goal:** Capture basic page view + event analytics without third-party scripts; admin dashboard shows visit trends.
+**Goal:** Collect and manage email addresses from interested visitors.
+
+---
+
+## Sprint 8 — Privacy-First Analytics ✅ Complete
+
+**Goal:** Know who is visiting and what they are reading, without Google Analytics or a cookie banner.
+
+### Backend — ✅ Fully complete
+- [x] `app/models/page_view.py` — `PageView` ORM model (path, referrer, country, session_id, created_at; IP never stored)
+- [x] `alembic/versions/0009_create_page_views.py` — `page_views` table + indexes
+- [x] `app/repositories/analytics_repo.py` — record (with 30-min deduplication), total_views, unique_sessions, top_pages, top_referrers, top_countries, daily_views
+- [x] `app/schemas/analytics.py` — `PageViewCreate` (public input schema)
+- [x] `app/schemas/admin/analytics.py` — `AnalyticsSummaryOut`, `AnalyticsPagesOut`, `AnalyticsReferrersOut`, `AnalyticsCountriesOut`
+- [x] `app/services/analytics_service.py` — `record_view()` (dedup + sanitise), `get_summary()`, `get_pages()`, `get_referrers()`, `get_countries()`
+- [x] `app/api/v1/endpoints/analytics.py` — `POST /api/v1/analytics/view` (public, no auth)
+- [x] `app/api/admin/analytics.py` — `GET /admin/api/analytics/summary|pages|referrers|countries` (all protected)
+- [x] `app/api/v1/router.py` + `app/api/admin/router.py` — analytics routers wired
+- [x] `alembic/env.py` — `page_view` model registered
+- [x] `tests/admin/test_admin_analytics.py` — 25 tests (public recording, dedup, auth guards, summary, pages, referrers, countries)
+
+### Frontend — ✅ Fully complete
+- [x] `recharts` added as dependency (`pnpm add recharts@3.10.1`)
+- [x] `src/hooks/use-analytics.ts` — `useAnalytics()` fires `POST /api/v1/analytics/view` on every route change; session_id from sessionStorage
+- [x] `src/components/layout/root-layout.tsx` — `useAnalytics()` wired into the public layout
+- [x] `src/lib/admin-api.ts` — `AnalyticsPeriod`, summary/pages/referrers/countries types + 4 API functions appended
+- [x] `src/features/admin/analytics/use-admin-analytics.ts` — `useAnalyticsSummary`, `useAnalyticsPages`, `useAnalyticsReferrers`, `useAnalyticsCountries` (all React Query, 1 min stale)
+- [x] `src/pages/admin/admin-analytics-page.tsx` — period picker (7d/30d/all) + stat cards + recharts LineChart + 3 breakdown tables (pages, referrers, countries)
+- [x] `src/constants/routes.ts` — `ADMIN_ROUTES.ANALYTICS` added
+- [x] `src/routes/index.tsx` — `{ path: 'analytics', element: <AdminAnalyticsPage /> }` added
+- [x] `src/features/admin/layout/admin-nav.tsx` — Analytics nav link (BarChart2 icon) added
+
+### Design decisions recorded
+- IP address never stored — privacy-first; country lookup deferred (MaxMind GeoLite2 requires license key)
+- `session_id` — random UUID in `sessionStorage` (cleared on tab close); not linkable to identity
+- 30-minute dedup window: same session_id + path within 30 min = one view
+- `period` validation: invalid values fall back to `7d` silently
+- `recharts` used for the daily views line chart; CSS bar chart for pages/referrers/countries breakdowns
+
+---
+
+## Next Sprint to Implement — Sprint 9: Newsletter Subscriber Management
 
 ---
 

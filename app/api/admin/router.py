@@ -15,6 +15,7 @@ from __future__ import annotations
 
 from fastapi import APIRouter, Depends
 
+from app.api.admin.analytics import router as analytics_router
 from app.api.admin.articles import router as articles_router
 from app.api.admin.auth import router as auth_router
 from app.api.admin.availability import router as availability_router
@@ -70,5 +71,10 @@ _protected.include_router(
     case_studies_router,
     prefix="/case-studies",
     tags=["admin-case-studies"],
+)
+_protected.include_router(
+    analytics_router,
+    prefix="/analytics",
+    tags=["admin-analytics"],
 )
 admin_router.include_router(_protected)
